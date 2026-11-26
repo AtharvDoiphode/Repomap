@@ -149,6 +149,7 @@ function getLayoutedElements(nodes, edges, direction = 'LR') {
 function GraphCanvasInner({
   nodes: rawNodes = [],
   edges: rawEdges = [],
+  circularEdgeIds = [],
   selectedNodeId,
   onSelectNode,
   theme = 'dark',
@@ -156,6 +157,8 @@ function GraphCanvasInner({
   const [direction, setDirection] = useState('LR'); // 'LR' or 'TB'
   const { fitView } = useReactFlow();
   const isDark = theme === 'dark';
+
+  const circularSet = useMemo(() => new Set(circularEdgeIds || []), [circularEdgeIds]);
 
   // Compute set of directly connected nodes to selectedNodeId
   const connectedNodeIds = useMemo(() => {
@@ -193,30 +196,53 @@ function GraphCanvasInner({
   // Transform raw edges for React Flow
   const preparedEdges = useMemo(() => {
     return rawEdges.map((e) => {
+      const edgeId = e.id || `${e.source}->${e.target}`;
+      const isCircular = circularSet.has(edgeId) || circularSet.has(`${e.source}->${e.target}`);
       const isConnectedToSelected =
         selectedNodeId && (e.source === selectedNodeId || e.target === selectedNodeId);
 
       const defaultStroke = isDark ? '#3f3f46' : '#a1a1aa';
       const activeStroke = isDark ? '#10b981' : '#059669';
+      const amberStroke = '#f59e0b'; // amber-400 for circular dependencies
+
+      let stroke = defaultStroke;
+      let strokeWidth = 1.2;
+      let strokeDasharray = undefined;
+      let markerColor = defaultStroke;
+      let animated = false;
+
+      if (isCircular) {
+        stroke = amberStroke;
+        strokeWidth = 2;
+        strokeDasharray = '5,5';
+        markerColor = amberStroke;
+        animated = true;
+      } else if (isConnectedToSelected) {
+        stroke = activeStroke;
+        strokeWidth = 2;
+        markerColor = activeStroke;
+        animated = true;
+      }
 
       return {
-        id: e.id || `${e.source}->${e.target}`,
+        id: edgeId,
         source: e.source,
         target: e.target,
-        animated: Boolean(isConnectedToSelected),
+        animated,
         style: {
-          stroke: isConnectedToSelected ? activeStroke : defaultStroke,
-          strokeWidth: isConnectedToSelected ? 2 : 1.2,
+          stroke,
+          strokeWidth,
+          strokeDasharray,
         },
         markerEnd: {
           type: MarkerType.ArrowClosed,
           width: 14,
           height: 14,
-          color: isConnectedToSelected ? activeStroke : defaultStroke,
+          color: markerColor,
         },
       };
     });
-  }, [rawEdges, selectedNodeId, isDark]);
+  }, [rawEdges, circularSet, selectedNodeId, isDark]);
 
   // Compute layout with Dagre
   const { nodes: layoutedNodes, edges: layoutedEdges } = useMemo(() => {

@@ -5,21 +5,13 @@
 <br/><br/>
 
 <a href="https://github.com/AtharvDoiphode/Repomap">
-  <img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=600&size=19&pause=1800&color=10B981&center=true&vCenter=true&width=620&lines=Zero-Config+GitHub+Architecture+Telemetry;Single-Call+Tree+Traversal+%7C+95%25+Fewer+API+Calls;Static+AST+Dependency+Graph+%2B+Health+Scorer;Interactive+React+Flow+Canvas+%2B+Mermaid.js+Export" alt="RepoMap Typing SVG" />
+  <img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=600&size=19&pause=1800&color=10B981&center=true&vCenter=true&width=620&lines=Zero-Config+GitHub+Architecture+Telemetry;Single-Call+Tree+Traversal+%7C+95%25+Fewer+API+Calls;DFS+Circular+Dependency+Detection;Interactive+React+Flow+Canvas+%2B+Mermaid.js+Export" alt="RepoMap Typing SVG" />
 </a>
 
 <br/>
 
 <p align="center">
   <b>Instant GitHub module dependency visualizer, architecture health audit engine, and native Mermaid.js diagram generator for your project README.</b>
-</p>
-
-<p align="center">
-  <a href="#key-capabilities">Key Features</a> •
-  <a href="#pipeline-architecture">Pipeline Architecture</a> •
-  <a href="#sample-mermaid-export">Sample Diagram</a> •
-  <a href="#quickstart">Quickstart</a> •
-  <a href="#tech-stack">Tech Stack</a>
 </p>
 
 <!-- Flat Square Badges -->
@@ -38,161 +30,81 @@
 
 ---
 
-## ⚡ The Problem & The Solution
+## ⚡ Key Engineering Highlights
 
-> Traditional GitHub code search and dependency mapping tools make 50+ recursive REST calls, quickly depleting GitHub's 60 req/hr unauthenticated rate limit.
+### 1. Single-Call Tree Traversal (95% Fewer API Calls)
+Traditional code visualizers make 50+ recursive REST calls, quickly depleting GitHub's 60 req/hr unauthenticated rate limit. RepoMap pulls the full repository tree in a **single call** via `GET /repos/{owner}/{repo}/git/trees/{branch}?recursive=1`, and ingests manifests directly from `raw.githubusercontent.com` concurrently via `Promise.allSettled`.
 
-**RepoMap** re-engineers this pipeline from the ground up:
-1. **Single-Call Recursive Tree Fetch:** Pulls the entire repository index in a single `GET /repos/{owner}/{repo}/git/trees/{branch}?recursive=1` request.
-2. **CDN-Based Raw Ingestion:** Fetches manifest and entrypoint files concurrently through GitHub's raw CDN (`raw.githubusercontent.com`), bypassing standard REST rate limits completely.
-3. **In-Memory AST Resolution:** Statically parses ESM, CJS, and Python import trees, computes file in-degree/out-degree couplings, audits architecture health (0–100), and lays out an interactive graph in Dagre and React Flow.
-4. **1-Click Viral Exporter:** Generates verified Mermaid.js flowchart markdown for documentation, SVG canvas snapshots, and Shields.io dynamic architecture badges.
+### 2. DFS Circular Dependency Detector
+A built-in Depth-First Search (`DFS`) cycle-detection engine analyzes statically resolved edges using recursion-stack back-edge tracking. Circular import chains (e.g. `a.js → b.js → a.js`) are flagged in the 0–100 architecture health audit, highlighted with amber-dashed lines on the canvas, and listed in the inspection telemetry panel.
 
----
+### 3. Dynamic Live SVG Architecture Badge
+Embed a real-time, zero-dependency obsidian badge in any GitHub README using our live SVG endpoint:
+```markdown
+[![RepoMap Architecture](http://localhost:5000/api/badge/pmndrs/zustand)](https://github.com/pmndrs/zustand)
+```
+Serves a self-contained, cache-controlled (`max-age=3600`) `196x26` vector badge color-coded by health score (`#10b981` >= 75, `#f59e0b` >= 50, `#ef4444` < 50).
 
-## 🔬 Pipeline Architecture
-
-<div align="center">
-  <img src="./assets/pipeline-diagram.svg" alt="RepoMap Ingestion Pipeline" width="100%" />
-</div>
-
-<br/>
-
-| Stage | Operation | Details & Optimizations |
-| :--- | :--- | :--- |
-| **01. Ingestion** | `GET /git/trees/{branch}?recursive=1` | Single REST call fetches up to 100,000 files. Bypasses recursive directory walks. |
-| **02. Caching** | MongoDB TTL (24 Hours) | Indexed by `{ owner, repo }`. Delivers cached AST & topology in sub-5ms on repeated scans. |
-| **03. Raw Fetch** | `raw.githubusercontent.com` | Fetches `package.json`, manifests, and top 45 core modules via `Promise.allSettled`. |
-| **04. Static AST** | Regex AST & Import Graph | Normalizes relative paths (`./`, `../`), resolves cross-directory edges, and computes graph density. |
-| **05. Health Audit** | 0–100 Architecture Score | Penalizes high coupling (fan-out > 5), circular references, shallow test coverage, and nested depths. |
-| **06. Canvas** | React Flow + Dagre | Obsidian dark canvas (`#09090b`), interactive node cards, live telemetry inspector, and layout switcher (`LR`/`TB`). |
+### 4. Interactive Obsidian Canvas & High-Res Export
+- **React Flow v12 + Dagre Layout:** Seamlessly switch between Horizontal (`LR`) and Vertical (`TB`) DAG layouts with node selection spotlighting.
+- **Viral Export Engine:** 1-click generation of native Mermaid.js flowchart markdown, high-res 2x PNG snapshots (`html-to-image`), raw JSON AST telemetry, and Shields.io badges.
 
 ---
 
-## 📊 Sample Generated Mermaid.js Diagram
-
-RepoMap generates clean, syntax-safe Mermaid markdown ready to drop directly into your GitHub `README.md`:
+## 📊 System Architecture
 
 ```mermaid
 %% Generated via RepoMap Architecture Telemetry
 flowchart LR
-    classDef nodeStyle fill:#111113,stroke:#27272a,stroke-width:1px,color:#f4f4f5,font-family:monospace,font-size:11px;
-    classDef hubStyle fill:#09090b,stroke:#10b981,stroke-width:2px,color:#10b981,font-family:monospace,font-size:11px;
+    classDef hub fill:#09090b,stroke:#10b981,stroke-width:2px,color:#10b981,font-family:monospace,font-size:11px;
+    classDef node fill:#111113,stroke:#27272a,stroke-width:1px,color:#f4f4f5,font-family:monospace,font-size:11px;
 
-    client_src_App_jsx["client/src/App.jsx"]:::hubStyle
-    client_src_components_GraphCanvas_jsx["client/src/components/GraphCanvas.jsx"]:::nodeStyle
-    client_src_components_Inspector_jsx["client/src/components/Inspector.jsx"]:::nodeStyle
-    client_src_components_ExportModal_jsx["client/src/components/ExportModal.jsx"]:::nodeStyle
-    client_src_components_LandingPage_jsx["client/src/components/LandingPage.jsx"]:::nodeStyle
-    server_src_index_js["server/src/index.js"]:::hubStyle
-    server_src_routes_repoRoutes_js["server/src/routes/repoRoutes.js"]:::nodeStyle
-    server_src_services_githubService_js["server/src/services/githubService.js"]:::nodeStyle
-    server_src_services_parserService_js["server/src/services/parserService.js"]:::nodeStyle
+    UI["Vite + React 19 Client"]:::hub
+    API["Express 4 Server"]:::hub
+    DB[("MongoDB 24h TTL Cache")]:::node
+    GH["GitHub Tree API + Raw CDN"]:::node
+    PARSER["Static AST & DFS Cycle Engine"]:::node
+    CANVAS["React Flow + Dagre Matrix"]:::node
+    EXPORTER["Mermaid & Live SVG Badge"]:::node
 
-    client_src_App_jsx --> client_src_components_GraphCanvas_jsx
-    client_src_App_jsx --> client_src_components_Inspector_jsx
-    client_src_App_jsx --> client_src_components_ExportModal_jsx
-    client_src_App_jsx --> client_src_components_LandingPage_jsx
-    server_src_index_js --> server_src_routes_repoRoutes_js
-    server_src_routes_repoRoutes_js --> server_src_services_githubService_js
-    server_src_routes_repoRoutes_js --> server_src_services_parserService_js
+    UI -->|"POST /api/analyze"| API
+    API -->|"Check Cache"| DB
+    API -->|"Fetch Index (1 Call)"| GH
+    GH -->|"Concurrent Raw Files"| PARSER
+    PARSER -->|"Nodes, Edges, Health & Cycles"| API
+    API -->|"Topology Stream"| CANVAS
+    CANVAS --> EXPORTER
 ```
 
 ---
 
-## 🎨 Design System
+## 🚀 3-Step Local Setup
 
-RepoMap follows a bespoke, minimalist dark developer-studio aesthetic:
-- **Obsidian Canvas:** `#09090b` canvas surface, `#111113` inspection panels, and crisp `1px` `#27272a` hairline borders.
-- **Paper Light Mode:** Clean `#fafafa` canvas with `#ffffff` cards and `#e4e4e7` borders for presentations and docs.
-- **Typography:** `Inter` for clean editorial UI, paired with `JetBrains Mono` for code telemetry and metric badges.
-- **Accents:** Emerald (`#10b981` / `emerald-400`) signals operational health and selected dependency traces.
-
----
-
-## 🚀 Quickstart
-
-### Prerequisites
-- **Node.js** >= 18.0.0
-- **MongoDB** (Local instance or MongoDB Atlas cluster)
-- **GitHub Personal Access Token** *(Optional, recommended to increase rate limits to 5,000 req/hr)*
-
-### 1. Clone the Repository
+### 1. Clone & Configure
 ```bash
 git clone https://github.com/AtharvDoiphode/Repomap.git
 cd Repomap
+cp server/.env.example server/.env
 ```
 
-### 2. Configure Environment Variables
-Inside `server/`, create a `.env` file based on `.env.example`:
-
-```bash
-cd server
-cp .env.example .env
-```
-
-Edit `server/.env`:
-```env
-PORT=5000
-MONGODB_URI=mongodb://localhost:27017/repomap
-# Optional GitHub Token to increase rate limits to 5,000 req/hr:
-GITHUB_TOKEN=your_personal_access_token_here
-
-# Optional GitHub OAuth for personal scan histories:
-GITHUB_CLIENT_ID=your_oauth_client_id
-GITHUB_CLIENT_SECRET=your_oauth_client_secret
-JWT_SECRET=repomap_jwt_secret_key_2026
-CLIENT_URL=http://localhost:5173
-```
-
-### 3. Run Backend Server
+### 2. Start Backend
 ```bash
 cd server
 npm install
-npm run dev
-# Expected output:
-# [MongoDB] Connected to database: repomap
-# [Server] RepoMap API running on port 5000
+node src/index.js
+# Expected: ✅ Connected to MongoDB | 🚀 Server running on http://localhost:5000
 ```
 
-### 4. Run Frontend Studio
-Open a new terminal:
+### 3. Start Frontend Studio
 ```bash
-cd client
+cd ../client
 npm install
 npm run dev
-# Open http://localhost:5173 in your browser
+# Open http://localhost:5173
 ```
 
 ---
 
-## 🛠️ Tech Stack & Dependencies
-
-### Frontend (`client/`)
-- **Core:** [React 19](https://react.dev/), [Vite 6](https://vitejs.dev/)
-- **Visual Graph:** [@xyflow/react](https://reactflow.dev/) (React Flow v12)
-- **Graph Layout:** [dagre](https://github.com/dagrejs/dagre) (Directed Graph Auto-Layout)
-- **Animations:** [Framer Motion](https://www.framer.com/motion/)
-- **Styling:** [Tailwind CSS v4](https://tailwindcss.com/), [Lucide React](https://lucide.dev/)
-- **Utilities:** `canvas-confetti`
-
-### Backend (`server/`)
-- **Runtime:** [Node.js](https://nodejs.org/), [Express 4](https://expressjs.com/)
-- **Database & Cache:** [MongoDB](https://www.mongodb.com/) via [Mongoose](https://mongoosejs.com/) (24h TTL indexes)
-- **Auth:** [jsonwebtoken](https://jwt.io/), GitHub OAuth REST API
-- **HTTP Client:** [Axios](https://axios-http.com/) with raw CDN streaming
-- **Development:** [Nodemon](https://nodemon.io/), [dotenv](https://github.com/motdotla/dotenv)
-
----
-
-## 🔒 Security & Privacy
-
-- **Safe By Default:** Non-authenticated guests browse in strict private guest mode (`localStorage` only). Zero global history leakage.
-- **Credential Safety:** Secrets (`.env`) are strictly ignored from source control.
-- **Sandboxed Ingestion:** File parsing executes purely in-memory via deterministic regular expressions without running untrusted user code.
-
----
-
-## 📄 License
-
-MIT License © 2026 [Atharv Doiphode](https://github.com/AtharvDoiphode). Built for developers and engineering teams.
+<div align="center">
+  <sub>MIT License © 2026 <a href="https://github.com/AtharvDoiphode">Atharv Doiphode</a>. Built for developers and engineering teams.</sub>
+</div>

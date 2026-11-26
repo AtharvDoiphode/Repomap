@@ -169,9 +169,88 @@ function detectTechStack(files, contentMap) {
 }
 
 /**
+ * Detects circular dependencies using Depth-First Search (DFS) back-edge detection.
+ * Returns circular edge IDs and up to 5 formatted cycles.
+ */
+export function findCircularDependencies(edges = []) {
+  const adj = new Map();
+  const allNodes = new Set();
+
+  for (const edge of edges) {
+    if (!edge.source || !edge.target) continue;
+    allNodes.add(edge.source);
+    allNodes.add(edge.target);
+
+    if (!adj.has(edge.source)) {
+      adj.set(edge.source, []);
+    }
+    adj.get(edge.source).push({
+      target: edge.target,
+      id: edge.id || `${edge.source}->${edge.target}`,
+    });
+  }
+
+  const visited = new Set();
+  const recursionStack = [];
+  const recursionStackSet = new Set();
+  const edgeStack = [];
+
+  const circularEdgeIds = new Set();
+  const cycles = [];
+
+  function dfs(u) {
+    visited.add(u);
+    recursionStack.push(u);
+    recursionStackSet.add(u);
+
+    const neighbors = adj.get(u) || [];
+    for (const { target: v, id: edgeId } of neighbors) {
+      if (recursionStackSet.has(v)) {
+        // Back-edge detected: cycle exists from v -> ... -> u -> v
+        circularEdgeIds.add(edgeId);
+
+        const cycleStartIndex = recursionStack.indexOf(v);
+        if (cycleStartIndex !== -1) {
+          const cycleNodes = [...recursionStack.slice(cycleStartIndex), v];
+          const cycleEdgePath = edgeStack.slice(cycleStartIndex);
+          for (const eid of cycleEdgePath) {
+            circularEdgeIds.add(eid);
+          }
+
+          if (cycles.length < 5) {
+            const cycleKey = cycleNodes.join('->');
+            if (!cycles.some((c) => c.join('->') === cycleKey)) {
+              cycles.push(cycleNodes);
+            }
+          }
+        }
+      } else if (!visited.has(v)) {
+        edgeStack.push(edgeId);
+        dfs(v);
+        edgeStack.pop();
+      }
+    }
+
+    recursionStack.pop();
+    recursionStackSet.delete(u);
+  }
+
+  for (const node of allNodes) {
+    if (!visited.has(node)) {
+      dfs(node);
+    }
+  }
+
+  return {
+    circularEdgeIds: Array.from(circularEdgeIds),
+    cycles,
+  };
+}
+
+/**
  * Calculates deterministic architecture health score (0–100).
  */
-function calculateHealthScore(files, edges) {
+function calculateHealthScore(files, edges, circularEdgeIds = []) {
   const filePaths = files.map((f) => f.path.toLowerCase());
 
   // 1. Documentation (+25 pts)
@@ -204,15 +283,15 @@ function calculateHealthScore(files, edges) {
       : 0;
   const isModular = codeFiles.length > 0 && avgSize < 15360;
 
-  // 5. Clean Dependency Graph (+15 pts) - at least 1 internal module edge
-  const hasDependencyEdges = edges.length > 0;
+  // 5. Zero Circular Dependencies (+15 pts) - passes only when edges exist and zero cycles detected
+  const noCircularDeps = edges.length > 0 && circularEdgeIds.length === 0;
 
   const checks = [
     { label: 'Documentation (README provided)', passed: hasReadme, points: 25 },
     { label: 'Automated Tests (test/spec files)', passed: hasTests, points: 25 },
     { label: 'Type Safety & Linting Config', passed: hasLintOrTypes, points: 20 },
     { label: 'Modular Sizing (Avg file < 15KB)', passed: isModular, points: 15 },
-    { label: 'Internal Dependency Graph Linked', passed: hasDependencyEdges, points: 15 },
+    { label: 'Zero Circular Dependencies', passed: noCircularDeps, points: 15 },
   ];
 
   const score = checks.reduce((sum, c) => (c.passed ? sum + c.points : sum), 0);
@@ -231,6 +310,8 @@ export async function analyzeCodebase(owner, repo, branch, files) {
       healthScore: { score: 0, checks: [] },
       nodes: [],
       edges: [],
+      circularEdgeIds: [],
+      cycles: [],
     };
   }
 
@@ -341,16 +422,21 @@ export async function analyzeCodebase(owner, repo, branch, files) {
     };
   });
 
-  // 6. Detect Tech Stack
+  // 6. Detect Circular Dependencies
+  const { circularEdgeIds, cycles } = findCircularDependencies(cleanEdges);
+
+  // 7. Detect Tech Stack
   const techStack = detectTechStack(files, contentMap);
 
-  // 7. Calculate Architecture Health Score
-  const healthScore = calculateHealthScore(files, cleanEdges);
+  // 8. Calculate Architecture Health Score
+  const healthScore = calculateHealthScore(files, cleanEdges, circularEdgeIds);
 
   return {
     techStack,
     healthScore,
     nodes,
     edges: cleanEdges,
+    circularEdgeIds,
+    cycles,
   };
 }

@@ -32,6 +32,7 @@ import {
   FolderLock,
   Github,
   Info,
+  AlertTriangle,
 } from 'lucide-react';
 
 function formatBytes(bytes) {
@@ -547,6 +548,39 @@ export default function App() {
                   </div>
                 ))}
               </div>
+
+              {/* Circular Dependency Warning Alert */}
+              {data.cycles && data.cycles.length > 0 && (
+                <div
+                  className={`p-3 rounded border flex flex-col gap-2 mt-1 ${
+                    isDark
+                      ? 'bg-amber-950/20 border-amber-500/30 text-amber-200'
+                      : 'bg-amber-50 border-amber-300 text-amber-900'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-mono font-semibold tracking-wider flex items-center gap-1.5 text-amber-400">
+                      <AlertTriangle size={12} className="text-amber-400 shrink-0" />
+                      CIRCULAR IMPORTS DETECTED ({data.cycles.length})
+                    </span>
+                  </div>
+                  <div className="flex flex-col gap-1 pt-0.5">
+                    {data.cycles.slice(0, 5).map((cycle, idx) => (
+                      <div
+                        key={idx}
+                        className={`text-[10px] font-mono p-1.5 rounded border overflow-x-auto whitespace-nowrap ${
+                          isDark
+                            ? 'bg-[#09090b]/80 border-amber-500/20 text-amber-300'
+                            : 'bg-white border-amber-200 text-amber-800'
+                        }`}
+                        title={cycle.join(' → ')}
+                      >
+                        {cycle.map((p) => p.split('/').pop()).join(' → ')}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -945,6 +979,7 @@ export default function App() {
                   <GraphCanvas
                     nodes={data.nodes}
                     edges={data.edges}
+                    circularEdgeIds={data.circularEdgeIds}
                     selectedNodeId={selectedNodeId}
                     onSelectNode={setSelectedNodeId}
                     repoUrl={`https://github.com/${data.owner}/${data.repo}`}

@@ -63,6 +63,8 @@ const repoCacheSchema = new mongoose.Schema(
     },
     nodes: [nodeItemSchema],
     edges: [edgeItemSchema],
+    circularEdgeIds: [{ type: String }],
+    cycles: [[{ type: String }]],
     createdAt: {
       type: Date,
       default: Date.now,

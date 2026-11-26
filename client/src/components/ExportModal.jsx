@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
+import { toPng } from 'html-to-image';
 import {
   X,
   Copy,
@@ -8,6 +9,8 @@ import {
   Shield,
   FileJson,
   Image as ImageIcon,
+  Camera,
+  Radio,
 } from 'lucide-react';
 
 /**
@@ -77,7 +80,14 @@ export default function ExportModal({ isOpen, onClose, repoData, theme = 'dark' 
   const [activeTab, setActiveTab] = useState('mermaid'); // 'mermaid' | 'badges' | 'download'
   const [mermaidDir, setMermaidDir] = useState('LR'); // 'LR' | 'TD'
   const [copiedKey, setCopiedKey] = useState(null);
+  const [isExportingPng, setIsExportingPng] = useState(false);
   const isDark = theme === 'dark';
+
+  const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+  const liveBadgeUrl = repoData ? `${apiBase}/badge/${repoData.owner}/${repoData.repo}` : '';
+  const liveBadgeMarkdown = repoData
+    ? `[![RepoMap Architecture Health](${liveBadgeUrl})](https://github.com/${repoData.owner}/${repoData.repo})`
+    : '';
 
   // Close on Escape key
   useEffect(() => {
@@ -133,6 +143,27 @@ export default function ExportModal({ isOpen, onClose, repoData, theme = 'dark' 
     a.download = `${repoData.repo}-architecture.json`;
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+  const handleDownloadPNG = async () => {
+    const flowViewport = document.querySelector('.react-flow__viewport');
+    if (!flowViewport) return;
+    try {
+      setIsExportingPng(true);
+      const dataUrl = await toPng(flowViewport, {
+        backgroundColor: isDark ? '#09090b' : '#fafafa',
+        pixelRatio: 2,
+        cacheBust: true,
+      });
+      const a = document.createElement('a');
+      a.href = dataUrl;
+      a.download = `${repoData.repo}-architecture.png`;
+      a.click();
+    } catch (err) {
+      console.error('Failed to export PNG:', err);
+    } finally {
+      setIsExportingPng(false);
+    }
   };
 
   const handleDownloadSVG = () => {
@@ -374,38 +405,68 @@ export default function ExportModal({ isOpen, onClose, repoData, theme = 'dark' 
 
         {/* Tab 2: README Badges */}
         {activeTab === 'badges' && (
-          <div className="p-5 flex flex-col gap-4 overflow-y-auto">
-            {/* Live Preview */}
+          <div className="p-5 flex flex-col gap-5 overflow-y-auto max-h-[60vh]">
+            {/* Dynamic Self-Hosted RepoMap SVG Badge */}
             <div className="flex flex-col gap-2">
-              <span className="text-xs font-mono uppercase tracking-wider text-zinc-500">
-                Live Badge Preview
-              </span>
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-mono uppercase tracking-wider text-emerald-500 font-semibold flex items-center gap-1.5">
+                  <Radio size={13} className="text-emerald-500 animate-pulse" />
+                  Dynamic Live SVG Badge (Self-Hosted)
+                </span>
+                <button
+                  type="button"
+                  onClick={() => handleCopy(liveBadgeMarkdown, 'live-badge')}
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded text-xs font-mono border transition-colors ${
+                    isDark
+                      ? 'bg-zinc-900 border-zinc-700 hover:border-emerald-500/50 hover:bg-zinc-800 text-zinc-200'
+                      : 'bg-white border-zinc-300 hover:border-emerald-500 hover:bg-zinc-50 text-zinc-800'
+                  }`}
+                >
+                  {copiedKey === 'live-badge' ? (
+                    <>
+                      <Check size={12} className="text-emerald-500" />
+                      <span className="text-emerald-500 font-medium">✓ COPIED</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy size={12} />
+                      <span>COPY LIVE BADGE</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
               <div
-                className={`p-4 rounded border flex flex-wrap items-center gap-2 ${
+                className={`p-3 rounded border flex items-center gap-3 ${
                   isDark ? 'bg-[#09090b] border-zinc-800' : 'bg-zinc-50 border-zinc-200'
                 }`}
               >
                 <img
-                  src={`https://img.shields.io/badge/Architecture%20Health-${healthScore}%2F100-${scoreBadgeColor}?style=flat-square`}
-                  alt="Architecture Health"
-                  className="h-5"
+                  src={liveBadgeUrl}
+                  alt="RepoMap Live Architecture Health"
+                  className="h-6.5"
                 />
-                {(repoData.techStack || []).map((tech) => (
-                  <img
-                    key={tech}
-                    src={`https://img.shields.io/badge/${encodeURIComponent(tech)}-111113?style=flat-square&logoColor=white`}
-                    alt={tech}
-                    className="h-5"
-                  />
-                ))}
+                <span className="text-[11px] font-mono text-zinc-500">
+                  Real-time SVG endpoint updating directly with cache & commits
+                </span>
               </div>
+
+              <pre
+                className={`font-mono text-xs border p-3 rounded overflow-x-auto leading-relaxed ${
+                  isDark
+                    ? 'bg-[#09090b] border-zinc-800 text-zinc-300'
+                    : 'bg-zinc-50 border-zinc-200 text-zinc-800'
+                }`}
+              >
+                {liveBadgeMarkdown}
+              </pre>
             </div>
 
-            {/* Markdown Code */}
-            <div className="flex flex-col gap-2">
+            {/* Shields.io Static Badges */}
+            <div className="flex flex-col gap-2 pt-2 border-t border-zinc-800/60">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-mono uppercase tracking-wider text-zinc-500">
-                  Markdown Code
+                  Shields.io Markdown Badges
                 </span>
                 <button
                   type="button"
@@ -424,14 +485,34 @@ export default function ExportModal({ isOpen, onClose, repoData, theme = 'dark' 
                   ) : (
                     <>
                       <Copy size={12} />
-                      <span>COPY BADGES</span>
+                      <span>COPY SHIELDS.IO</span>
                     </>
                   )}
                 </button>
               </div>
 
+              <div
+                className={`p-3 rounded border flex flex-wrap items-center gap-2 ${
+                  isDark ? 'bg-[#09090b] border-zinc-800' : 'bg-zinc-50 border-zinc-200'
+                }`}
+              >
+                <img
+                  src={`https://img.shields.io/badge/Architecture%20Health-${healthScore}%2F100-${scoreBadgeColor}?style=flat-square`}
+                  alt="Architecture Health"
+                  className="h-5"
+                />
+                {(repoData.techStack || []).map((tech) => (
+                  <img
+                    key={tech}
+                    src={`https://img.shields.io/badge/${encodeURIComponent(tech)}-111113?style=flat-square&logoColor=white`}
+                    alt={tech}
+                    className="h-5"
+                  />
+                ))}
+              </div>
+
               <pre
-                className={`font-mono text-xs border p-3.5 rounded overflow-x-auto leading-relaxed ${
+                className={`font-mono text-xs border p-3 rounded overflow-x-auto leading-relaxed ${
                   isDark
                     ? 'bg-[#09090b] border-zinc-800 text-zinc-300'
                     : 'bg-zinc-50 border-zinc-200 text-zinc-800'
@@ -443,10 +524,10 @@ export default function ExportModal({ isOpen, onClose, repoData, theme = 'dark' 
           </div>
         )}
 
-        {/* Tab 3: JSON & SVG Download */}
+        {/* Tab 3: JSON, PNG & SVG Download */}
         {activeTab === 'download' && (
-          <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* JSON Box */}
+          <div className="p-5 grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {/* PNG Box */}
             <div
               className={`p-4 rounded border flex flex-col justify-between gap-3 ${
                 isDark ? 'border-zinc-800 bg-[#09090b]' : 'border-zinc-200 bg-zinc-50'
@@ -458,24 +539,25 @@ export default function ExportModal({ isOpen, onClose, repoData, theme = 'dark' 
                     isDark ? 'text-zinc-200' : 'text-zinc-900'
                   }`}
                 >
-                  <FileJson size={16} className="text-emerald-500" />
-                  <span>ARCHITECTURE DATA (.JSON)</span>
+                  <Camera size={16} className="text-emerald-500" />
+                  <span>HIGH-RES IMAGE (.PNG)</span>
                 </div>
                 <p className={`text-xs leading-relaxed font-sans ${isDark ? 'text-zinc-400' : 'text-zinc-600'}`}>
-                  Export complete AST telemetry metadata, node hierarchy, and edge pairs for CI/CD or custom pipeline consumption.
+                  Export a crystal-clear 2x raster snapshot of the live React Flow viewport.
                 </p>
               </div>
               <button
                 type="button"
-                onClick={handleDownloadJSON}
+                onClick={handleDownloadPNG}
+                disabled={isExportingPng}
                 className={`w-full flex items-center justify-center gap-2 py-2 rounded text-xs font-mono font-medium border transition-colors ${
                   isDark
-                    ? 'bg-zinc-900 border-zinc-700 text-zinc-200 hover:bg-zinc-800 hover:border-emerald-500/40 hover:text-emerald-300'
-                    : 'bg-white border-zinc-300 text-zinc-800 hover:bg-zinc-100 hover:border-emerald-500 hover:text-emerald-700 shadow-xs'
+                    ? 'bg-zinc-900 border-zinc-700 text-zinc-200 hover:bg-zinc-800 hover:border-emerald-500/40 hover:text-emerald-300 disabled:opacity-50'
+                    : 'bg-white border-zinc-300 text-zinc-800 hover:bg-zinc-100 hover:border-emerald-500 hover:text-emerald-700 shadow-xs disabled:opacity-50'
                 }`}
               >
                 <Download size={13} />
-                <span>DOWNLOAD ARCHITECTURE.JSON</span>
+                <span>{isExportingPng ? 'CAPTURING...' : 'DOWNLOAD PNG (HIGH-RES)'}</span>
               </button>
             </div>
 
@@ -495,7 +577,7 @@ export default function ExportModal({ isOpen, onClose, repoData, theme = 'dark' 
                   <span>VECTOR DIAGRAM (.SVG)</span>
                 </div>
                 <p className={`text-xs leading-relaxed font-sans ${isDark ? 'text-zinc-400' : 'text-zinc-600'}`}>
-                  Export scalable vector graphic of the current architecture graph for presentations, docs, and high-res printouts.
+                  Export scalable vector graphic of the current graph for presentations and docs.
                 </p>
               </div>
               <button
@@ -509,6 +591,39 @@ export default function ExportModal({ isOpen, onClose, repoData, theme = 'dark' 
               >
                 <Download size={13} />
                 <span>DOWNLOAD DIAGRAM.SVG</span>
+              </button>
+            </div>
+
+            {/* JSON Box */}
+            <div
+              className={`p-4 rounded border flex flex-col justify-between gap-3 ${
+                isDark ? 'border-zinc-800 bg-[#09090b]' : 'border-zinc-200 bg-zinc-50'
+              }`}
+            >
+              <div className="flex flex-col gap-1.5">
+                <div
+                  className={`flex items-center gap-2 font-mono text-xs font-semibold ${
+                    isDark ? 'text-zinc-200' : 'text-zinc-900'
+                  }`}
+                >
+                  <FileJson size={16} className="text-emerald-500" />
+                  <span>ARCHITECTURE DATA (.JSON)</span>
+                </div>
+                <p className={`text-xs leading-relaxed font-sans ${isDark ? 'text-zinc-400' : 'text-zinc-600'}`}>
+                  Export raw AST telemetry, node hierarchy, and edge pairs for CI/CD pipelines.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleDownloadJSON}
+                className={`w-full flex items-center justify-center gap-2 py-2 rounded text-xs font-mono font-medium border transition-colors ${
+                  isDark
+                    ? 'bg-zinc-900 border-zinc-700 text-zinc-200 hover:bg-zinc-800 hover:border-emerald-500/40 hover:text-emerald-300'
+                    : 'bg-white border-zinc-300 text-zinc-800 hover:bg-zinc-100 hover:border-emerald-500 hover:text-emerald-700 shadow-xs'
+                }`}
+              >
+                <Download size={13} />
+                <span>DOWNLOAD JSON</span>
               </button>
             </div>
           </div>

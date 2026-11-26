@@ -67,6 +67,8 @@ router.post('/analyze', async (req, res) => {
             healthScore: cachedDoc.healthScore || { score: 0, checks: [] },
             nodes: cachedDoc.nodes || [],
             edges: cachedDoc.edges || [],
+            circularEdgeIds: cachedDoc.circularEdgeIds || [],
+            cycles: cachedDoc.cycles || [],
             cachedAt: cachedDoc.createdAt,
           };
           fromCache = true;
@@ -101,6 +103,8 @@ router.post('/analyze', async (req, res) => {
         healthScore: analysis.healthScore,
         nodes: analysis.nodes,
         edges: analysis.edges,
+        circularEdgeIds: analysis.circularEdgeIds || [],
+        cycles: analysis.cycles || [],
         cachedAt: null,
       };
 
@@ -122,6 +126,8 @@ router.post('/analyze', async (req, res) => {
               healthScore: analysis.healthScore,
               nodes: analysis.nodes,
               edges: analysis.edges,
+              circularEdgeIds: analysis.circularEdgeIds || [],
+              cycles: analysis.cycles || [],
               createdAt: new Date(),
             },
             { upsert: true, new: true, setDefaultsOnInsert: true }
@@ -170,6 +176,102 @@ router.post('/analyze', async (req, res) => {
       success: false,
       error: err.message,
     });
+  }
+});
+
+/**
+ * GET /api/badge/:owner/:repo
+ * Dynamic live SVG badge showing RepoMap architecture health score
+ */
+router.get('/badge/:owner/:repo', async (req, res) => {
+  try {
+    const { owner, repo } = req.params;
+    const repoKey = `${owner}/${repo}`.toLowerCase();
+
+    let score = null;
+    const isDbConnected = mongoose.connection.readyState === 1;
+
+    // 1. Try cache first
+    if (isDbConnected) {
+      try {
+        const cachedDoc = await RepoCache.findOne({ repoKey }).lean();
+        if (cachedDoc && cachedDoc.healthScore && typeof cachedDoc.healthScore.score === 'number') {
+          score = cachedDoc.healthScore.score;
+        }
+      } catch (err) {
+        console.warn('⚠️ [Badge Cache Check Failed]:', err.message);
+      }
+    }
+
+    // 2. If not cached, analyze on the fly
+    if (score === null) {
+      try {
+        const freshData = await fetchGitHubTree(owner, repo);
+        const analysis = await analyzeCodebase(
+          freshData.owner,
+          freshData.repo,
+          freshData.branch,
+          freshData.files
+        );
+        score = analysis.healthScore?.score ?? 0;
+
+        if (isDbConnected) {
+          await RepoCache.findOneAndUpdate(
+            { repoKey },
+            {
+              repoKey,
+              owner: freshData.owner,
+              repo: freshData.repo,
+              branch: freshData.branch,
+              description: freshData.description,
+              stars: freshData.stars,
+              language: freshData.language,
+              files: freshData.files,
+              techStack: analysis.techStack,
+              healthScore: analysis.healthScore,
+              nodes: analysis.nodes,
+              edges: analysis.edges,
+              circularEdgeIds: analysis.circularEdgeIds || [],
+              cycles: analysis.cycles || [],
+              createdAt: new Date(),
+            },
+            { upsert: true, new: true, setDefaultsOnInsert: true }
+          ).catch(() => {});
+        }
+      } catch (fetchErr) {
+        console.warn('⚠️ [Badge Live Fetch Failed]:', fetchErr.message);
+        score = 0;
+      }
+    }
+
+    const safeScore = Math.max(0, Math.min(100, Math.round(score)));
+    let accentColor = '#ef4444'; // red (< 50)
+    if (safeScore >= 75) {
+      accentColor = '#10b981'; // emerald (>= 75)
+    } else if (safeScore >= 50) {
+      accentColor = '#f59e0b'; // amber (>= 50)
+    }
+
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="196" height="26" viewBox="0 0 196 26" fill="none">
+  <rect width="196" height="26" rx="4" fill="#09090b" stroke="#27272a" stroke-width="1"/>
+  <text x="12" y="16.5" font-family="'JetBrains Mono', monospace, -apple-system, sans-serif" font-size="8.5" font-weight="600" fill="#a1a1aa" letter-spacing="0.5">REPOMAP // ARCH SCORE</text>
+  <line x1="130" y1="5" x2="130" y2="21" stroke="#27272a" stroke-width="1"/>
+  <rect x="136" y="4" width="52" height="18" rx="3" fill="${accentColor}18" stroke="${accentColor}44" stroke-width="1"/>
+  <text x="162" y="16.5" font-family="'JetBrains Mono', monospace, -apple-system, sans-serif" font-size="9.5" font-weight="700" fill="${accentColor}" text-anchor="middle">${safeScore}/100</text>
+</svg>`;
+
+    res.setHeader('Content-Type', 'image/svg+xml');
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+    return res.status(200).send(svg);
+  } catch (err) {
+    const fallbackSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="196" height="26" viewBox="0 0 196 26" fill="none">
+  <rect width="196" height="26" rx="4" fill="#09090b" stroke="#27272a" stroke-width="1"/>
+  <text x="12" y="16.5" font-family="'JetBrains Mono', monospace, sans-serif" font-size="8.5" font-weight="600" fill="#a1a1aa">REPOMAP // ARCH SCORE</text>
+  <rect x="136" y="4" width="52" height="18" rx="3" fill="#ef444418" stroke="#ef444444" stroke-width="1"/>
+  <text x="162" y="16.5" font-family="'JetBrains Mono', monospace, sans-serif" font-size="9.5" font-weight="700" fill="#ef4444" text-anchor="middle">ERR</text>
+</svg>`;
+    res.setHeader('Content-Type', 'image/svg+xml');
+    return res.status(200).send(fallbackSvg);
   }
 });
 
