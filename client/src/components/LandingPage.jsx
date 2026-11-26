@@ -23,6 +23,7 @@ import {
   Activity,
   CheckCircle2,
   Github,
+  LogOut,
   User as UserIcon,
   Play,
   Share2,
@@ -79,6 +80,7 @@ export default function LandingPage({
   onToggleTheme,
   user,
   onLogin,
+  onLogout,
 }) {
   const [inputVal, setInputVal] = useState('');
   const [activeSchematic, setActiveSchematic] = useState('mern');
@@ -182,25 +184,43 @@ export default function LandingPage({
             {isDark ? <Sun size={14} className="text-amber-400" /> : <Moon size={14} />}
           </motion.button>
 
-          {/* GitHub Auth Pill */}
+          {/* GitHub Auth Section */}
           {user ? (
-            <div
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded border text-xs font-mono ${
-                isDark
-                  ? 'border-zinc-800 bg-zinc-900 text-zinc-300'
-                  : 'border-zinc-200 bg-zinc-100 text-zinc-800'
-              }`}
-            >
-              {user.avatarUrl ? (
-                <img
-                  src={user.avatarUrl}
-                  alt={user.username}
-                  className="w-4 h-4 rounded-full"
-                />
-              ) : (
-                <UserIcon size={12} className="text-emerald-400" />
-              )}
-              <span className="text-[11px] font-medium">{user.username}</span>
+            <div className="flex items-center gap-2">
+              <div
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded border text-xs font-mono ${
+                  isDark
+                    ? 'border-zinc-800 bg-zinc-900 text-zinc-300'
+                    : 'border-zinc-200 bg-zinc-100 text-zinc-800'
+                }`}
+              >
+                {user.avatarUrl ? (
+                  <img
+                    src={user.avatarUrl}
+                    alt={user.username}
+                    className="w-4 h-4 rounded-full ring-1 ring-emerald-500/40"
+                  />
+                ) : (
+                  <UserIcon size={12} className="text-emerald-400" />
+                )}
+                <span className="text-[11px] font-medium">@{user.username}</span>
+              </div>
+
+              <motion.button
+                type="button"
+                onClick={onLogout}
+                whileHover={{ y: -1 }}
+                whileTap={{ scale: 0.97 }}
+                className={`border px-2.5 py-1.5 rounded text-xs font-mono flex items-center gap-1.5 transition-colors cursor-pointer ${
+                  isDark
+                    ? 'border-zinc-800 bg-zinc-900 text-zinc-400 hover:border-red-500/50 hover:text-red-400 hover:bg-red-500/10'
+                    : 'border-zinc-300 bg-white text-zinc-600 hover:border-red-500/50 hover:text-red-500 hover:bg-red-50'
+                }`}
+                title="Sign Out"
+              >
+                <LogOut size={12} />
+                <span className="font-semibold">LOGOUT</span>
+              </motion.button>
             </div>
           ) : (
             <motion.button

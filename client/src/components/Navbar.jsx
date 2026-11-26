@@ -183,7 +183,7 @@ export default function Navbar({
         {user ? (
           <div className="flex items-center gap-1.5">
             <div
-              className={`flex items-center gap-1.5 px-2 py-1 rounded border text-xs font-mono ${
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded border text-xs font-mono ${
                 isDark
                   ? 'border-zinc-800 bg-zinc-900 text-zinc-300'
                   : 'border-zinc-200 bg-zinc-100 text-zinc-800'
@@ -193,26 +193,27 @@ export default function Navbar({
                 <img
                   src={user.avatarUrl}
                   alt={user.username}
-                  className="w-4 h-4 rounded-full"
+                  className="w-4 h-4 rounded-full ring-1 ring-emerald-500/40"
                 />
               ) : (
                 <UserIcon size={12} className="text-emerald-400" />
               )}
-              <span className="hidden sm:inline-block text-[11px] font-medium truncate max-w-[80px]">
-                {user.username}
+              <span className="text-[11px] font-medium truncate max-w-[100px]">
+                @{user.username}
               </span>
             </div>
             <button
               type="button"
               onClick={onLogout}
-              className={`p-1.5 rounded border transition-colors ${
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded border text-xs font-mono transition-colors cursor-pointer ${
                 isDark
-                  ? 'border-zinc-800 bg-zinc-900 text-zinc-400 hover:text-red-400 hover:border-red-900'
-                  : 'border-zinc-200 bg-zinc-100 text-zinc-600 hover:text-red-600 hover:border-red-200'
+                  ? 'border-zinc-800 bg-zinc-900 text-zinc-400 hover:border-red-500/50 hover:text-red-400 hover:bg-red-500/10'
+                  : 'border-zinc-300 bg-white text-zinc-600 hover:border-red-500/50 hover:text-red-500 hover:bg-red-50'
               }`}
-              title="Sign Out"
+              title="Log out of GitHub"
             >
-              <LogOut size={13} />
+              <LogOut size={12} />
+              <span className="font-semibold">LOGOUT</span>
             </button>
           </div>
         ) : (

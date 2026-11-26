@@ -129,8 +129,13 @@ export default function App() {
   const handleLogout = () => {
     localStorage.removeItem('repomap_token');
     setUser(null);
-    setUserHistory([]);
     setUserRepos([]);
+    try {
+      const guestHistory = JSON.parse(localStorage.getItem('repomap_guest_history') || '[]');
+      setUserHistory(guestHistory);
+    } catch {
+      setUserHistory([]);
+    }
   };
 
   const handleScan = async (repoInput) => {
@@ -211,6 +216,7 @@ export default function App() {
         onToggleTheme={toggleTheme}
         user={user}
         onLogin={handleLogin}
+        onLogout={handleLogout}
       />
     );
   }
