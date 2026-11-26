@@ -61,7 +61,14 @@ export default function App() {
   const [isExportOpen, setIsExportOpen] = useState(false);
 
   // Landing page state
-  const [showLanding, setShowLanding] = useState(true);
+  const [showLanding, setShowLanding] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('repo')) return false;
+      if (window.history.state?.view === 'studio') return false;
+    }
+    return true;
+  });
 
   // Global Theme State ('dark' | 'light')
   const [theme, setTheme] = useState(() => {
@@ -138,11 +145,60 @@ export default function App() {
     }
   };
 
+  const handleGoHome = () => {
+    setShowLanding(true);
+    setSelectedNodeId(null);
+    const url = new URL(window.location);
+    url.searchParams.delete('repo');
+    window.history.pushState({ view: 'landing' }, '', url);
+  };
+
+  const handleEnterStudio = () => {
+    setShowLanding(false);
+    window.history.pushState({ view: 'studio' }, '', window.location.href);
+  };
+
+  // Browser Back & Forward button handling
+  useEffect(() => {
+    if (!window.history.state) {
+      window.history.replaceState(
+        { view: showLanding ? 'landing' : 'studio' },
+        '',
+        window.location.href
+      );
+    }
+
+    const handlePopState = (event) => {
+      const state = event.state;
+      if (state?.view === 'landing') {
+        setShowLanding(true);
+        setSelectedNodeId(null);
+      } else if (state?.view === 'studio') {
+        setShowLanding(false);
+      } else {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('repo')) {
+          setShowLanding(false);
+        } else {
+          setShowLanding(true);
+          setSelectedNodeId(null);
+        }
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
   const handleScan = async (repoInput) => {
     setLoading(true);
     setError(null);
     setSelectedNodeId(null);
     setShowLanding(false); // Switch to studio view on scan
+
+    const url = new URL(window.location);
+    url.searchParams.set('repo', repoInput);
+    window.history.pushState({ view: 'studio', repo: repoInput }, '', url);
     try {
       const res = await analyzeRepository(repoInput);
       if (res.success && res.data) {
@@ -211,7 +267,7 @@ export default function App() {
     return (
       <LandingPage
         onStartScan={handleScan}
-        onEnterStudio={() => setShowLanding(false)}
+        onEnterStudio={handleEnterStudio}
         theme={theme}
         onToggleTheme={toggleTheme}
         user={user}
@@ -232,7 +288,7 @@ export default function App() {
         loading={loading}
         hasRepo={Boolean(data)}
         onOpenExport={() => setIsExportOpen(true)}
-        onGoHome={() => setShowLanding(true)}
+        onGoHome={handleGoHome}
         theme={theme}
         onToggleTheme={toggleTheme}
         user={user}
