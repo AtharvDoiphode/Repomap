@@ -10,11 +10,22 @@
 
 <br/>
 
+<!-- Prominent Live Production Action Badges -->
+<p align="center">
+  <a href="https://repomap-eta.vercel.app">
+    <img src="https://img.shields.io/badge/LIVE_DEMO-repomap--eta.vercel.app-10b981?style=for-the-badge&logo=vercel&logoColor=white" alt="Live Demo" />
+  </a>
+  &nbsp;
+  <a href="https://repomap-eta.vercel.app/?repo=AtharvDoiphode/Repomap">
+    <img src="https://repomap-qut7.onrender.com/api/badge/AtharvDoiphode/Repomap" alt="RepoMap Arch Score" height="28" />
+  </a>
+</p>
+
 <p align="center">
   <b>Instant GitHub module dependency visualizer, architecture health audit engine, and native Mermaid.js diagram generator for your project README.</b>
 </p>
 
-<!-- Flat Square Badges -->
+<!-- Flat Square Stack Badges -->
 <p align="center">
   <img src="https://img.shields.io/badge/React_19-09090b?style=for-the-badge&logo=react&logoColor=61DAFB" alt="React 19" />
   <img src="https://img.shields.io/badge/Vite_6-09090b?style=for-the-badge&logo=vite&logoColor=646CFF" alt="Vite 6" />
@@ -38,16 +49,34 @@ Traditional code visualizers make 50+ recursive REST calls, quickly depleting Gi
 ### 2. DFS Circular Dependency Detector
 A built-in Depth-First Search (`DFS`) cycle-detection engine analyzes statically resolved edges using recursion-stack back-edge tracking. Circular import chains (e.g. `a.js → b.js → a.js`) are flagged in the 0–100 architecture health audit, highlighted with amber-dashed lines on the canvas, and listed in the inspection telemetry panel.
 
-### 3. Dynamic Live SVG Architecture Badge
-Embed a real-time, zero-dependency obsidian badge in any GitHub README using our live SVG endpoint:
+### 3. Dynamic Live SVG Architecture Badge Endpoint
+Embed a real-time, zero-dependency obsidian badge in any GitHub README using our live production SVG endpoint:
 ```markdown
-[![RepoMap Architecture](http://localhost:5000/api/badge/pmndrs/zustand)](https://github.com/pmndrs/zustand)
+[![RepoMap Architecture](https://repomap-qut7.onrender.com/api/badge/<owner>/<repo>)](https://repomap-eta.vercel.app/?repo=<owner>/<repo>)
 ```
-Serves a self-contained, cache-controlled (`max-age=3600`) `196x26` vector badge color-coded by health score (`#10b981` >= 75, `#f59e0b` >= 50, `#ef4444` < 50).
+Serves a self-contained, cache-controlled (`max-age=3600`) `196x26` vector badge color-coded by health score:
+- **`#10b981` (Emerald)**: Score $\ge 75$
+- **`#f59e0b` (Amber)**: Score $50 - 74$
+- **`#ef4444` (Rose)**: Score $< 50$
 
 ### 4. Interactive Obsidian Canvas & High-Res Export
 - **React Flow v12 + Dagre Layout:** Seamlessly switch between Horizontal (`LR`) and Vertical (`TB`) DAG layouts with node selection spotlighting.
 - **Viral Export Engine:** 1-click generation of native Mermaid.js flowchart markdown, high-res 2x PNG snapshots (`html-to-image`), raw JSON AST telemetry, and Shields.io badges.
+
+---
+
+## 🛡️ Embed Your Own Live Architecture Badge
+
+Add dynamic architecture health telemetry to your repository README with one line of Markdown:
+
+```markdown
+<!-- Replace :owner and :repo with your GitHub repository -->
+[![RepoMap Architecture Health](https://repomap-qut7.onrender.com/api/badge/:owner/:repo)](https://repomap-eta.vercel.app/?repo=:owner/:repo)
+```
+
+**Live Example (RepoMap):**
+
+[![RepoMap Architecture Health](https://repomap-qut7.onrender.com/api/badge/AtharvDoiphode/Repomap)](https://repomap-eta.vercel.app/?repo=AtharvDoiphode/Repomap)
 
 ---
 
@@ -59,9 +88,9 @@ flowchart LR
     classDef hub fill:#09090b,stroke:#10b981,stroke-width:2px,color:#10b981,font-family:monospace,font-size:11px;
     classDef node fill:#111113,stroke:#27272a,stroke-width:1px,color:#f4f4f5,font-family:monospace,font-size:11px;
 
-    UI["Vite + React 19 Client"]:::hub
-    API["Express 4 Server"]:::hub
-    DB[("MongoDB 24h TTL Cache")]:::node
+    UI["Vercel Production Client"]:::hub
+    API["Render Production API"]:::hub
+    DB[("MongoDB Atlas 24h TTL Cache")]:::node
     GH["GitHub Tree API + Raw CDN"]:::node
     PARSER["Static AST & DFS Cycle Engine"]:::node
     CANVAS["React Flow + Dagre Matrix"]:::node

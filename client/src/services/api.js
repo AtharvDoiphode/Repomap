@@ -1,7 +1,25 @@
 import axios from 'axios';
 
-// API client pointing to Express server
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+/**
+ * Resolves the API base URL dynamically.
+ * Gracefully defaults to Render in production if VITE_API_URL is missing,
+ * while maintaining localhost for local development.
+ */
+export function getApiBaseUrl() {
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+  if (
+    typeof window !== 'undefined' &&
+    window.location.hostname !== 'localhost' &&
+    window.location.hostname !== '127.0.0.1'
+  ) {
+    return 'https://repomap-qut7.onrender.com/api';
+  }
+  return 'http://localhost:5000/api';
+}
+
+const API_BASE_URL = getApiBaseUrl();
 
 const client = axios.create({
   baseURL: API_BASE_URL,

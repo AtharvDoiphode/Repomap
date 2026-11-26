@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { toPng } from 'html-to-image';
+import { getApiBaseUrl } from '../services/api';
 import {
   X,
   Copy,
@@ -83,7 +84,7 @@ export default function ExportModal({ isOpen, onClose, repoData, theme = 'dark' 
   const [isExportingPng, setIsExportingPng] = useState(false);
   const isDark = theme === 'dark';
 
-  const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+  const apiBase = getApiBaseUrl();
   const liveBadgeUrl = repoData ? `${apiBase}/badge/${repoData.owner}/${repoData.repo}` : '';
   const liveBadgeMarkdown = repoData
     ? `[![RepoMap Architecture Health](${liveBadgeUrl})](https://github.com/${repoData.owner}/${repoData.repo})`
