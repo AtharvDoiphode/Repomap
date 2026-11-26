@@ -1,0 +1,140 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 320" width="1200" height="320">
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap');
+      .font-sans { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+      .font-mono { font-family: 'JetBrains Mono', monospace; }
+      
+      @keyframes pulseSlow {
+        0%, 100% { opacity: 0.35; transform: scale(0.95); }
+        50% { opacity: 1; transform: scale(1.05); }
+      }
+      @keyframes dashFlow {
+        to { stroke-dashoffset: -40; }
+      }
+      .telemetry-pulse {
+        animation: pulseSlow 3s ease-in-out infinite;
+        transform-origin: center;
+      }
+      .flow-path {
+        stroke-dasharray: 6 6;
+        animation: dashFlow 2s linear infinite;
+      }
+    </style>
+
+    <!-- Dot matrix background pattern -->
+    <pattern id="dotGrid" width="24" height="24" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1.2" fill="#27272a" />
+    </pattern>
+
+    <!-- Emerald gradient -->
+    <linearGradient id="emeraldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#34d399" />
+      <stop offset="100%" stop-color="#059669" />
+    </linearGradient>
+
+    <!-- Card glow -->
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="8" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Canvas Background -->
+  <rect width="1200" height="320" fill="#09090b" rx="12" />
+  <rect width="1200" height="320" fill="url(#dotGrid)" rx="12" />
+  <rect width="1198" height="318" x="1" y="1" fill="none" stroke="#27272a" stroke-width="1.5" rx="11" />
+
+  <!-- ── Left Side: Brand & Hero Messaging ────────────────── -->
+  <g transform="translate(60, 48)">
+    <!-- Version Tag -->
+    <g>
+      <rect width="170" height="26" rx="4" fill="#111113" stroke="#27272a" stroke-width="1" />
+      <circle cx="16" cy="13" r="3.5" fill="#10b981" class="telemetry-pulse" />
+      <text x="28" y="17" fill="#10b981" class="font-mono" font-size="11" font-weight="600" letter-spacing="1">REPOMAP // V1.0</text>
+    </g>
+
+    <!-- Title -->
+    <text x="0" y="85" fill="#fafafa" class="font-sans" font-size="44" font-weight="700" letter-spacing="-1">
+      RepoMap<tspan fill="#10b981">.</tspan>
+    </text>
+
+    <!-- Subtitle -->
+    <text x="0" y="122" fill="#a1a1aa" class="font-sans" font-size="16" font-weight="400">
+      Instant GitHub Repository Architecture &amp; Dependency Telemetry
+    </text>
+    <text x="0" y="146" fill="#71717a" class="font-sans" font-size="13">
+      Zero-clone AST parsing, Dagre DAG layout, and GPRM-style Mermaid.js README exports.
+    </text>
+
+    <!-- Feature Pills -->
+    <g transform="translate(0, 185)">
+      <!-- Pill 1 -->
+      <g>
+        <rect width="180" height="30" rx="4" fill="#111113" stroke="#27272a" stroke-width="1" />
+        <text x="14" y="19" fill="#e4e4e7" class="font-mono" font-size="11" font-weight="500">95% FEWER API CALLS</text>
+      </g>
+      <!-- Pill 2 -->
+      <g transform="translate(192, 0)">
+        <rect width="170" height="30" rx="4" fill="#111113" stroke="#27272a" stroke-width="1" />
+        <text x="14" y="19" fill="#e4e4e7" class="font-mono" font-size="11" font-weight="500">DAGRE AUTO-LAYOUT</text>
+      </g>
+      <!-- Pill 3 -->
+      <g transform="translate(374, 0)">
+        <rect width="165" height="30" rx="4" fill="#111113" stroke="#27272a" stroke-width="1" />
+        <text x="14" y="19" fill="#e4e4e7" class="font-mono" font-size="11" font-weight="500">0–100 HEALTH AUDIT</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- ── Right Side: Animated Schematic Architecture ─────── -->
+  <g transform="translate(680, 28)">
+    <!-- Connecting Curved Paths -->
+    <path id="path1" d="M 120 75 C 240 75, 240 145, 340 145" fill="none" stroke="#3f3f46" stroke-width="2" class="flow-path" />
+    <path id="path2" d="M 340 145 C 240 145, 240 215, 120 215" fill="none" stroke="#3f3f46" stroke-width="2" class="flow-path" />
+
+    <!-- Animated Data Pulses moving along paths -->
+    <circle r="4" fill="#10b981">
+      <animateMotion dur="2.4s" repeatCount="indefinite" path="M 120 75 C 240 75, 240 145, 340 145" />
+    </circle>
+    <circle r="4" fill="#10b981">
+      <animateMotion dur="2.4s" repeatCount="indefinite" path="M 340 145 C 240 145, 240 215, 120 215" />
+    </circle>
+
+    <!-- Node 1: GitHub Tree API -->
+    <g transform="translate(10, 42)">
+      <rect width="210" height="66" rx="6" fill="#111113" stroke="#27272a" stroke-width="1.2" />
+      <rect width="210" height="24" rx="6" fill="#18181b" />
+      <rect width="210" height="1" y="24" fill="#27272a" />
+      <circle cx="14" cy="12" r="3" fill="#10b981" />
+      <text x="24" y="16" fill="#f4f4f5" class="font-mono" font-size="11" font-weight="600">GitHub Trees API</text>
+      <text x="175" y="16" fill="#10b981" class="font-mono" font-size="10">1-CALL</text>
+      <text x="14" y="44" fill="#a1a1aa" class="font-mono" font-size="10">Recursive blob metadata</text>
+      <text x="14" y="58" fill="#71717a" class="font-mono" font-size="9">Noise filters applied</text>
+    </g>
+
+    <!-- Node 2: Static AST Parser (Center) -->
+    <g transform="translate(250, 112)">
+      <rect width="220" height="66" rx="6" fill="#111113" stroke="#10b981" stroke-width="1.5" />
+      <rect width="220" height="24" rx="6" fill="#18181b" />
+      <rect width="220" height="1" y="24" fill="#27272a" />
+      <circle cx="14" cy="12" r="3" fill="#10b981" class="telemetry-pulse" />
+      <text x="24" y="16" fill="#f4f4f5" class="font-mono" font-size="11" font-weight="600">Static AST Parser</text>
+      <text x="180" y="16" fill="#10b981" class="font-mono" font-size="10">FAST</text>
+      <text x="14" y="44" fill="#a1a1aa" class="font-mono" font-size="10">ES / CJS / Py relative imports</text>
+      <text x="14" y="58" fill="#10b981" class="font-mono" font-size="9">Health Score: 94/100</text>
+    </g>
+
+    <!-- Node 3: React Flow Graph -->
+    <g transform="translate(10, 182)">
+      <rect width="210" height="66" rx="6" fill="#111113" stroke="#27272a" stroke-width="1.2" />
+      <rect width="210" height="24" rx="6" fill="#18181b" />
+      <rect width="210" height="1" y="24" fill="#27272a" />
+      <circle cx="14" cy="12" r="3" fill="#38bdf8" />
+      <text x="24" y="16" fill="#f4f4f5" class="font-mono" font-size="11" font-weight="600">React Flow Canvas</text>
+      <text x="165" y="16" fill="#38bdf8" class="font-mono" font-size="10">DAGRE</text>
+      <text x="14" y="44" fill="#a1a1aa" class="font-mono" font-size="10">Interactive Node Telemetry</text>
+      <text x="14" y="58" fill="#71717a" class="font-mono" font-size="9">Export: Mermaid + SVG</text>
+    </g>
+  </g>
+</svg>
